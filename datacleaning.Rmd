@@ -1,0 +1,111 @@
+---
+title: "datacleaning"
+author: "Abigail Skalka"
+date: "10/15/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+
+library(tidyverse)
+library(XML)
+library(methods)
+EU_data <- read_delim("20201009-FULL-1_0.csv", delim = ";", 
+                   col_types = cols(
+                       Date_file = col_character(),
+                       Entity_logical_id = col_double(),
+                       Subject_type = col_character(),
+                       Leba_numtitle = col_character(),
+                       Leba_publication_date = col_date(format = ""),
+                       Leba_url = col_character(),
+                       Programme = col_character(),
+                       Entity_remark = col_character(),
+                       Naal_logical_id = col_double(),
+                       Entity_logical_id_1 = col_double(),
+                       Naal_leba_numtitle = col_character(),
+                       Naal_leba_publication_date = col_date(format = ""),
+                       Naal_leba_url = col_character(),
+                       Naal_programme = col_character(),
+                       Naal_lastname = col_character(),
+                       Naal_firstname = col_character(),
+                       Naal_middlename = col_character(),
+                       Naal_wholename = col_character(),
+                       Naal_gender = col_character(),
+                       Naal_title = col_character(),
+                       Naal_function = col_character(),
+                       Naal_language = col_character(),
+                       Addr_logical_id = col_double(),
+                       Entity_logical_id_2 = col_double(),
+                       Addr_leba_numtitle = col_character(),
+                       Addr_leba_publication_date = col_date(format = ""),
+                       Addr_leba_url = col_character(),
+                       Addr_programme = col_character(),
+                       Addr_number = col_logical(),
+                       Addr_street = col_character(),
+                       Addr_zipcode = col_character(),
+                       Addr_city = col_character(),
+                       Addr_country = col_character(),
+                       Addr_other = col_character(),
+                       Birt_logical_id = col_double(),
+                       Entity_logical_id_3 = col_double(),
+                       Birt_leba_numtitle = col_character(),
+                       Birt_leba_publication_date = col_date(format = ""),
+                       Birt_leba_url = col_character(),
+                       Birt_programme = col_character(),
+                       Birt_date = col_character(),
+                       Birt_place = col_character(),
+                       Birt_country = col_character(),
+                       Iden_logical_id = col_double(),
+                       Entity_logical_id_4 = col_double(),
+                       Iden_leba_numtitle = col_character(),
+                       Iden_leba_publication_date = col_date(format = ""),
+                       Iden_leba_url = col_character(),
+                       Iden_programme = col_character(),
+                       Iden_number = col_character(),
+                       Iden_country = col_logical(),
+                       Citi_logical_id = col_double(),
+                       Entity_logical_id_5 = col_double(),
+                       Citi_leba_numtitle = col_character(),
+                       Citi_leba_publication_date = col_date(format = ""),
+                       Citi_leba_url = col_character(),
+                       Citi_programme = col_character(),
+                       Citi_country = col_character(),
+                       EU_ref_num = col_character()
+                   )) %>%
+  select(- Leba_url, 
+         - Naal_leba_url, 
+         - Addr_leba_url, 
+         - Birt_leba_url, 
+         - Iden_leba_url,
+         - Citi_leba_url) %>%
+  #mutate(lastName = Naal_lastname, 
+         #firstName = Naal_firstname) %>%
+  #select(- Naal_lastname, - Naal_firstname) %>%
+  mutate(Subject_type = map(Subject_type, ~ifelse("E" %in% ., "Entity", "Individual"))) 
+
+#Step 1: Save as data frame
+
+EU_data_df <- as.data.frame(EU_data)
+
+#Step 2: Save as RDS file
+
+write_rds(EU_data_df, "~/Desktop/Projects/FinalProjWork/EUdataframe_01.rds")
+```
+
+```{r}
+US_data_1 <- read_csv("~/Downloads/consall/cons_prim.csv")
+```
+
+```{r}
+US_consolidated <- xmlToDataFrame("~/Downloads/consall/consolidated.xml") %>%
+  select(- Publish_Date, - Record_Count) %>%
+  drop_na(uid) %>%
+  mutate(Subject_type = sdnType) %>%
+  select(- sdnType)
+
+write_rds(US_consolidated, "USConsolidated.rds") 
+  
+```
+
