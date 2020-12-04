@@ -11,6 +11,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 library(tidyverse)
 library(XML)
+library(dplyr)
 library(methods)
 EU_data <- read_delim("20201009-FULL-1_0.csv", delim = ";", 
                    col_types = cols(
@@ -79,33 +80,333 @@ EU_data <- read_delim("20201009-FULL-1_0.csv", delim = ";",
          - Addr_leba_url, 
          - Birt_leba_url, 
          - Iden_leba_url,
-         - Citi_leba_url) %>%
-  #mutate(lastName = Naal_lastname, 
-         #firstName = Naal_firstname) %>%
-  #select(- Naal_lastname, - Naal_firstname) %>%
-  mutate(Subject_type = map(Subject_type, ~ifelse("E" %in% ., "Entity", "Individual"))) 
+         - Citi_leba_url,
+         - Date_file,
+         - Entity_logical_id,
+         - Leba_numtitle,
+         - Naal_logical_id,
+         - Entity_logical_id_1,
+         - Entity_logical_id_2,
+         - Entity_logical_id_3,
+         - Entity_logical_id_4,
+         - Entity_logical_id_5,
+         - Naal_leba_numtitle,
+         - Naal_leba_publication_date,
+         - Naal_title,
+         - Naal_programme,
+         - Addr_logical_id,
+         - Addr_leba_numtitle,
+         - Addr_leba_publication_date,
+         - Addr_number,
+         - Addr_programme,
+         - Addr_other,
+         - Birt_logical_id,
+         - Birt_leba_numtitle,
+         - Birt_programme,
+         - Iden_logical_id,
+         - Iden_leba_numtitle,
+         - Iden_leba_publication_date,
+         - Iden_programme,
+         - Iden_country,
+         - Iden_number,
+         - Citi_logical_id,
+         - Citi_leba_numtitle,
+         - Citi_leba_publication_date) %>%
+  mutate(Subject_type = map(Subject_type, ~ifelse("E" %in% ., "Entity", "Individual"))) %>%
+  unnest(Subject_type)
+
+EU_data <- EU_data %>%
+   mutate(lastName = Naal_lastname, 
+         firstName = Naal_firstname,
+         middleName = Naal_middlename,
+         whole_name = Naal_wholename) %>%
+  select(- Naal_lastname, 
+         - Naal_firstname,
+         - Naal_middlename,
+         - Naal_wholename) 
 
 #Step 1: Save as data frame
 
 EU_data_df <- as.data.frame(EU_data)
 
+#...recode to clean a bit
+
+EU_data_df$Programme <- recode(EU_data_df$Programme, 'AFG' = "Afghanistan", 'BDI' = "Burundi", 'BLR' = "Belarus",
+                               'CAF' = "Central African Republic", 'CHEM' = "Chemical Weapons", 'COD' = "Congo", 
+                               'CYB' = "Cyber", 'EGY' = "Egypt", 'EUAQ' = "European Autonomous Al Qaeda", 
+                               'GIN' = "Guinea", 'GNB' = "Guinea-Bissau", 'IRN' = "Iran", 'IRQ' = "Iraq", 
+                               'LBY' = "Libya", 'MLI' = "Mali", 'MMR' = "Burma", 'NIC' = "Nicaragua",
+                               'PRK' = "North Korea", 'SDN' = "Sudan", 'SOM' = "Somalia", 'SSD' = "South Sudan",
+                               'SYR' = "Syria", 'TAQA' = "Al Qaeda", 'TERR' = "Terrorist groups other than Al Qaeda",
+                               'TUN' = "Tunisia", 'TUR' = "Turkey", 'UKR' = "Ukraine", 'UNLI' = "UN Listing",
+                               'VEN' = "Venezuela", 'YEM' = "Yemen", 'ZWE' = "Zimbabwe")
+
+EU_data_df$Birt_country <- recode(EU_data$Birt_country, 'AFG' = "Afghanistan", 'BDI' = "Burundi", 'BLR' = "Belarus",
+                               'CAF' = "Central African Republic", 'COD' = "Congo",'EGY' = "Egypt", 
+                               'GIN' = "Guinea", 'GNB' = "Guinea-Bissau", 'IRN' = "Iran", 'IRQ' = "Iraq", 
+                               'LBY' = "Libya", 'MLI' = "Mali", 'MMR' = "Burma", 'NIC' = "Nicaragua",
+                               'PRK' = "North Korea", 'SDN' = "Sudan", 'SOM' = "Somalia", 'SSD' = "South Sudan",
+                               'SYR' = "Syria", 'TUN' = "Tunisia", 'TUR' = "Turkey", 'UKR' = "Ukraine", 
+                               'VEN' = "Venezuela", 'YEM' = "Yemen", 'ZWE' = "Zimbabwe")
+
+EU_data_df$Birt_country <- recode(EU_data_df$Birt_country, 'AUS' = "Australia", 'BHR' = "Bahrain",
+                                  'BIH' = "Bosnia and Herzegovina", 'CHN' = "China", 'CZE' = "Czechia",
+                                  'DEU' = "Germany", 'DZA' = "Algeria", 'ERI' = "Eritrea", 'ETH' = "Ethiopia",
+                                  'FRA' = "France", 'GAB' = "Gabon", 'GBR' = "Great Britain", 'GEO' = "Georgia",
+                                  'IDN' = "Indonesia", 'IND' = "India", 'ITA' = "Italy", 'JPN' = "Japan",
+                                  'KEN' = "Kenya", 'KGZ' = "Kyrgyzstan", 'KWT' = "Kuwait", 'LBN' = "Lebanon",
+                                  'LTU' = "Lithuania", 'MAR' = "Morocco", 'MDA' = "Moldova", 'MRT' = "Mauritania",
+                                  'MYS' = "Malaysia", 'NGA' = "Nigeria", 'NLD' = "Netherlands", 'NOR' = "Norway",
+                                  'PAK' = "Pakistan", 'PHL' = "Philippines", 'PSE' = "Palestine", 'QAT' = "Qatar",
+                                  'RUS' = "Russia", 'RWA' = "Rwanda", 'SAU' = "Saudi Arabia", 'SEN' = "Senegal",
+                                  'TCD' = "Chad", 'TJK' = "Tajikistan", 'TTO' = "Trinidad and Tobago", 
+                                  'TZN' = "Tanzania", 'UGA' = "Uganda", 'USA' = "United States", 
+                                  'UZB' = "Uzbekistan", 'YUG' = "Yugoslavia")
+
+EU_countries <- c("Austria", "Belgium", "Bulgaria", "Croatia", "Cyprus", "Czechia", "Denmark", "Estonia", "Finland", "France", "Germany", "Greece", "Hungary", "Ireland", "Italy", "Latvia", "Lithuania", "Luxembourg", "Malta", "Netherlands", "Poland", "Portugal", "Romania", "Slovakia", "Slovenia", "Spain", "Sweden")
+
+EU_data_df <- EU_data_df %>%
+  mutate(born_in_eu = case_when(Birt_country %in% EU_countries ~ "Yes",
+                                Birt_country == "Great Britain" ~ "Former",
+                                TRUE ~ "No"))
+
 #Step 2: Save as RDS file
 
-write_rds(EU_data_df, "~/Desktop/Projects/FinalProjWork/EUdataframe_01.rds")
+write_rds(EU_data_df, "EUdataframe_01.rds")
 ```
 
 ```{r}
-US_data_1 <- read_csv("~/Downloads/consall/cons_prim.csv")
+#Reading in the data
+
+US_sdn <- xmlToDataFrame("~/Users/abigailskalka/Downloads/sdn.xml") %>%
+  select(- Publish_Date, - Record_Count) %>%
+  drop_na(uid) %>%
+  filter(sdnType != "Aircraft") %>%
+  filter(sdnType != "Vessel") %>%
+  mutate(Subject_type = sdnType) %>%
+  select(- sdnType, - vesselInfo)
+
+US_sdn$ln_title_case = str_to_title(US_sdn$lastName)
+
+#Creating a 'whole name' column
+
+US_sdn$whole_name = paste(US_sdn$firstName, US_sdn$ln_title_case)
+US_sdn$whole_name <- US_sdn$whole_name %>%
+  str_replace_all(pattern = "NA ", replacement = "")
+
+#Remove numbers from alias list using str_remove_all
+
+US_sdn$akaList <- US_sdn$akaList %>%
+str_remove_all(pattern = "[0123456789]") %>%
+
+#Then replace a.k.a.strong and a.k.a.weak with comma
+
+str_replace_all(pattern = "a.k.a.strong", replacement = ",") %>%
+str_replace_all(pattern = "a.k.a.weak", replacement = ",") 
+
+#Then remove the first character from all columns
+
+US_sdn$akaList <- sub(".", "", US_sdn$akaList)
+
+US_sdn$akaList <- gsub(",([A-Za-z])", ", \\1", US_sdn$akaList)
+
+US_sdn <- US_sdn %>%
+  select(- uid)
+
 ```
 
 ```{r}
-US_consolidated <- xmlToDataFrame("~/Downloads/consall/consolidated.xml") %>%
+US_cons <- xmlToDataFrame("~/Users/abigailskalka/Downloads/consolidated.xml") %>%
   select(- Publish_Date, - Record_Count) %>%
   drop_na(uid) %>%
   mutate(Subject_type = sdnType) %>%
-  select(- sdnType)
-
-write_rds(US_consolidated, "USConsolidated.rds") 
+  select(- sdnType, 
+         - citizenshipList, 
+         - uid) 
   
+
+write_rds(US_cons, "USCons.rds") 
+  
+```
+
+```{r}
+#Un-all-caps-ing the last names
+US_cons$ln_title_case = str_to_title(US_cons$lastName)
+
+#Creating a 'whole name' column
+US_cons$whole_name = paste(US_cons$firstName, US_cons$ln_title_case)
+
+#Remove numbers from alias list using str_remove_all
+
+US_cons$akaList <- US_cons$akaList %>%
+str_remove_all(pattern = "[0123456789]") %>%
+
+#Then replace a.k.a.strong with comma
+
+str_replace_all(pattern = "a.k.a.strong", replacement = ",")
+
+#Then remove the first character from all columns
+
+US_cons$akaList <- sub(".", "", US_cons$akaList)
+
+US_cons$akaList <- gsub(",([A-Za-z])", ", \\1", US_cons$akaList)
+
+```
+
+```{r}
+#Cleaning place of birth column
+US_cons$placeOfBirthList <- US_cons$placeOfBirthList %>%
+str_remove_all(pattern = "[0123456789]") %>%
+str_replace_all(pattern = "true", "")
+
+```
+
+```{r}
+#Cleaning the date of birth column
+US_cons$dateOfBirthList <- US_cons$dateOfBirthList %>%
+  str_replace_all(pattern = "true", "") %>%
+  str_sub(start = -4)
+```
+
+```{r}
+US_cons <- US_cons %>%
+  mutate(lastName = ln_title_case) %>%
+  select(- ln_title_case)
+```
+
+```{r}
+
+#Combining the 2 US datasets
+
+US_joined <- full_join(US_sdn, US_cons, keep = FALSE, by = c("lastName", "programList", "akaList", "addressList", "firstName", "idList", "dateOfBirthList", "placeOfBirthList", "remarks", "Subject_type", "whole_name"), suffix = c(".", "")) %>%
+  mutate(Programme = programList)
+
+#Recoding the Programme variable to make more logical sense and be readable
+
+US_joined$Programme <- recode(US_joined$Programme, 'BPI-PA' = "Patriot Act", 'BPI-SDNTK' = "Narcotics",
+       'CAATSA - IRAN' = "IRAN", 'CAATSA - RUSSIA' = "RUSSIA", 'CAR' = "CENTRAL AFRICAN REPUBLIC", 
+       'COTED' = "COTE D'IVOIRE", 'CYBER2' = "CYBER", 'DPRK' = "NORTH KOREA", 
+       'DPRK2' = "NORTH KOREA", 'DPRK3' = "NORTH KOREA", 'DPRK4' = "NORTH KOREA", 
+       'DPRK4-NKSPEA'= "NORTH KOREA",
+       'DRCONGO' = "CONGO", 'FSE-SY' = "SYRIA", 'FSE-IR' = "IRAN", 'FSE-WMD' = "Nuclear Proliferation", 
+       'FSE-SDGT' = "Terror", 'FTO' = "Terror", 'GLOMAG' = "Magnitsky", 'HIFPAA' = "Hizballah", 
+       'HK-EO13936' = "Hong Kong", 'FTOSDGT' = "Terror", 'FTOSDGTDNTK' = "Terror", 'IRANSDGTIFSRIRGC' = "IRAN",
+       'HRIT-SY' = "SYRIA", 'HYRIT-IR' = "IRAN", 'IFCA' = "IRAN", 'IFSR' = "IRAN", 'SDNTKFTOSDGT' = "Terror",
+       'IRAN-CON-ARMS-EO' = "IRAN", 'IRANIRAN-EO13902' = "IRAN", 'SYRIAFTOSDGT' = "SYRIA", 
+       'IFSRIRANSDGT' = "IRAN", 'FTOSDGTSDNTK' = "Terror", 'SYRIASDGT' = "SYRIA",
+       'IRAN-EO13846' = "IRAN", 'IRAN-EO13876' = "IRAN", 'IRAN-EO13871' = "IRAN", 'IRAN-EO13902' = "IRAN",
+       'IRAN-EO13553' = "IRAN", 'IRAN-HR' = "IRAN", 'IRAN-TRA' = "IRAN", 'IRAQ2' = "IRAQ", 'IRAQ3' = "IRAQ",
+       'IRGC' = "IRAN", 'ISA' = "IRAN", 'LIBYA2' = "LIBYA", 'LIBYA3' = "LIBYA", 'MAGNIT' = "Magnitsky", 
+       'MALI-EOO13882' = "MALI", 'NDAA' = "Defense Authorization Act", 'NICARAGUA-NHRAA' = "NICARAGUA",
+       'NPWMD' = "Nuclear Proliferation", 'NS-ISA' = "IRAN", 'NS-PLC' = "PALESTINE", 'SDGT' = "Terror",
+       'SDNT' = "Narcotics", 'SDNTK' = "Narcotics", 'SDT' = "Terror", 'SYRIA-CAESAR' = "SYRIA", 
+       'SYRIA-EO13894' = "SYRIA", 'TCO' = "Transnational Criminal Organizations", 
+       'UKRAINE-EO13660' = "UKRAINE", 'UKRAINE-EO13661' = "UKRAINE", 'UKRAINE-EO13662' = "UKRAINE",
+       'UKRAINE-EO13685' = "UKRAINE", 'VENEZUELA-EO13850' = "VENEZUELA", 'VENEZUELA-EO13884' = "VENEZUELA")
+
+US_joined$Programme <- recode(US_joined$Programme, 'CAATSA - RUSSIACYBER2' = "RUSSIA", 
+                              'CARSDGT' = "CENTRAL AFRICAN REPUBLIC", 'CYBER2CAATSA - RUSSIA' = "RUSSIA",
+                              'CYBER2DPRK3' = "CYBER", 'CYBER2ELECTION-EO13848' = "Election Meddling", 
+                              'CYBER2ELECTION-EO13848UKRAINE-EO13661' = "Election Meddling", 'CYBER2HRIT-IR' = "Cyber",
+                              'DPRK2DPRK4' = "NORTH KOREA", 'DPRK2NPWMD' = "NORTH KOREA", 
+                              'DPRK3DPRK-NKSPEA' = "NORTH KOREA", 'DPRK3DPRK4' = "NORTH KOREA", 
+                              'DPRKDPRK2' = "NORTH KOREA", 'ELECTION-EO13848' = "Election Meddling", 
+                              'ELECTION-EO13848CYBER2' = "Election Meddling", 
+                              'ELECTION-EO13848UKRAINE-EO13661CYBER2' = "Election Meddling",
+                              'FSE-SYSYRIA' = "SYRIA", 'FTOIRGC' = "Terror", 'FTOSDGTIRAQ3' = "Terror",
+                              'FTOSDGTSOMALIA' = "Terror", 'GLOMAGSDGT' = "Magnitsky", 'HIFPAASDGT' = "LEBANON",
+                              'HRIT-IR' = "IRAN", 'ICCP-EO13928' = "International Criminal Court",
+                              'IFCAIRAN' = "IRAN", 'IFSRIRAN-HRNPWMDIRGCSDT' = "IRAN", 'IFSRIRANNPWMD' = "IRAN",
+                              'IFSRIRANSDGTNPWMD' = "IRAN", 'IFSRIRGCNPWMDIRAN-HRSDGTIRAN-EO13876' = "IRAN",
+                              'IFSRIRGCNPWMDSDGT' = "Nuclear Proliferation", 
+                              'IFSRIRGCNPWMDSDGTFTO' = "Nuclear Proliferation",
+                              'IFSRIRGCSDT' = "Terror", 'IFSRIRGCSDGTIRAQ3' = "IRAQ", 'IFSRIRGCSDGTSYRIA' = "SYRIA",
+                              'IFSRNPWMD' = "Nuclear Proliferation", 'IFSRNPWMDIRAN' = "IRAN",
+                              'IFSRNPWMDIRAN-CON-ARMS-EO' = "IRAN", 'IFSRNPWMDIRGCSDT' = "Nuclear Proliferation",
+                              'IFSRNPWMDSDGTIRAN-CON-ARMS-EO' = "IRAN", 'IFSRNPWMDSDGTIRGCSYRIA' = "SYRIA",
+                              'IFSRSDGT' = "Terror", 'IFSRSDGTIRAN' = "IRAN", 'IFSRSDGTIRGC' = "Terrror",
+                              'IFSRSDGTIRGCIRAN-HR' = "IRAN", 'IFSRSDGTIRGCIRAN-HRSYRIA-EO13894' = "IRAN",
+                              'IFSRSDGTSYRIA' = "SYRIA", 'IFSRSDGTSYRIAIRGCFTOIRAN-HRELECTION-EO13848' = "SYRIA",
+                              'IRAN-EO13846IFSRSDGT' = "IRAN", 'IRAN-EO13871IFCA' = "IRAN", 'IRAN-EO13871IFSRSDGT' = "IRAN",
+                              'IRAN-HRIRAN' = "IRAN", 'IRAN-HRIRAN-EO13876' = "IRAN", 'IRAN-HRIRGCIFSR' = "IRAN",
+                              'IRAN-HRIRGCSDGT' = "IRAN", 'IRAN-HRSDGTHRIT-IRSYRIAIFSR' = "IRAN", 'IRAN-TRAIRAN' = "IRAN",
+                              'IRAN-TRASYRIAIRAN-HR' = "IRAN", 'IRANIFCAIFSRSDGT' = "IRAN", 'IRANIFSRNPWMD' = "IRAN",
+                              'IRANIFSRSDGT' = "IRAN", 'IRANIAN-EO13871' = "IRAN", 'IRANIAN-HR' = "IRAN",
+                              'IRANIAN-TRA' = "IRAN", 'IRANNPWMDIFSR' = "IRAN", 'IRANNPWMDIFSRSDGTIRGC' = "IRAN",
+                              'IRAQ2SYRIA' = "IRAQ", 'IRAQ3IRGCSDGT' = "IRAQ", 'IRAQ3SDGT' = "IRAQ", 
+                              'IRGCIFSRNPWMD' = "Nuclear Proliferation", 'IRGCIFSRSDGT' = "Terror",
+                              'IRGCIRAN-HRSDGTIFSRFTO' = "IRAN", 'IRGCNPWMDIFSRSDGT' = "Nuclear Proliferation",
+                              'IRGCNPWMDIFSRSDGTIFCA' = "Nuclear Proliferation", 'IRGCSDGTIFSR' = "Terror",
+                              'ISASYRIA' = "SYRIA", 'LEBANONSDGT' = "LEBANON", 'LEBANONSYRIA' = "LEBANON",
+                              'LIBYA3SDGT' = "LIBYA", 'MALI-EO13882' = "MALI", 'NICARAGUANICARAGUA-NHRAA' = "NICARAGUA",
+                              'NPWMMDDPRK2' = "Nuclear Proliferation", 'NPWMDDPRK3' = "Nuclear Proliferation",
+                              'NPWMDIFCAIRANIFSR' = "Nuclear Proliferation", 'NPWDMDIFSR' = "Nuclear Proliferation",
+                              'NPWDMDIFSRIRAN' = "Nuclear Proliferation", 'NPWDMDIFSRIRANSDGT' = "Nuclear Proliferation",
+                              'NPWDMDIFSRSDGT' = "Nuclear Proliferation", 'NPWMDIRGCIFSRSDGT' = "Nuclear Proliferation",
+                              'NPWMDSYRIAIFSR' = "Nuclear Proliferation", 'SDGTFTO' = "Terror", 'SDGTIFSR' = "Terror", 
+                              'SDGTIFSRIRGC' = "Terror", 'SDGTIFSRIRGCNPWMD' = "Terror", 'SDGTIFSRNPWMDIRGC' = "Terror",
+                              'SDGTNS-PLC' = "Terror", 'SDGTSDNTK' = "Terror", 'SDGTSYRIA' = "Terror", 'SDNTNKSDGT' = "Terror",
+                              'SDNTKTCO' = "Terror", 'SYRIA-CAESARSYRIA' = "SYRIA", 'SYRIAFSE-SY' = "SYRIA", 
+                              'SYRIAHRIT-IRIRAN-HR' = "SYRIA", 'SYRIAHRIT-SY' = "SYRIA", 'SYRIAIFSRSDGTIRGC' = "SYRIA",
+                              'SYRIAIRAN-HR' = "SYRIA", 'SYRIASDGTIFSRIRGC' = "SYRIA", 'SYRIASYRIA-CAESAR' = "SYRIA", 
+                              'SYRIASYRIA-EO13894' = "SYRIA", 'SYRIAUKRAINE-EO13662' = "SYRIA", 'TCOSDNTK' = "Terror",
+                              'UKRAINE-EO13661CYBER2' = "UKRAINE", 'UKRAINE-EO13661CYBER2ELECTION-EO13848' = "UKRAINE",
+                              'UKRAINE-EO13661ELECTION-EO13848CYBER2' = "UKRAINE", 'UKRAINE-EO13661UKRAINE-EO13660' = "UKRAINE",
+                              'UKRAINE-EO13661UKRAINE-EO13662' = "UKRAINE", 'UKRAINE-EO13661UKRAINE-EO13685' = "UKRAINE",
+                              'UKRAINE-EO13662VENEZUELA-EO13850' = "UKRAINE", 'UKRAINE-EO13685SYRIA' = "UKRAINE",
+                              'VENEZUELAIRAN-CON-ARMS-EO' = "VENEZUELA", 'VENEZUELASDNTK' = "VENEZUELA")
+
+US_joined$Programme <- recode(US_joined$Programme, 'NPWMDIRAN-HRHRIT-IRIRGCIFSRSDGTFTOELECTION-EO13848' = 
+                                "IRAN")
+
+US_joined$Programme <- recode(US_joined$Programme, 'Terrror' = "Terror", 'SDNTKSDGT' = "Terror", 
+                              'NPWMDIFSRIRGCSDGT' = "Nuclear Proliferation", 'NPWMDIFSRSDGT' = "Nuclear Proliferation",
+                              'NPWMDIFSRIRANSDGT' = "Nuclear Proliferation", 'NPWMDIFSRIRAN' = "Nuclear Proliferation",
+                              'NPWMDIFSR' = "Nuclear Proliferation", 'NPWMDDPRK2' = "Nuclear Proliferation",
+                              'IRGCSDGTHRIT-IRIFSR' = "Terror", 'IRANIRAN-TRA' = "IRAN", 'IRANIRAN-HR' = "IRAN",
+                              'IRANIRAN-EO13871' = "IRAN", 'IFSRNPWMDIRGCSDGT' = "Nuclear Proliferation",
+                              'IFSRNPWMDIRAN-TRA' = "IRAN", 'Cyber' = "CYBER",
+                              '561-Related' = "IRAN")
+
+US_joined$Programme <- recode(US_joined$Programme, 'IFSRIRGCSDGT' = "Terror", 'IFSRIRAN-HRNPWMDIRGCSDGT' = "IRAN")
+
+US_joined$Programme = str_to_title(US_joined$Programme)
+
+write_rds(US_joined, "US_joined.rds")
+```
+
+```{r}
+
+#Manipulating the data to make a column for the entries in common across
+#EU and US
+
+common <- intersect(US_joined$whole_name, EU_data_df$whole_name)
+
+
+EU_US_full <- full_join(US_joined, EU_data_df) %>%
+  mutate(both = if_else(whole_name %in% common, TRUE, FALSE)) %>%
+  select(- programList,
+         - akaList,
+         - addressList,
+         - idList,
+         - dateOfBirthList, 
+         - placeOfBirthList,
+         - remarks,
+         - nationalityList,
+         - citizenshipList,
+         - lastName,
+         - Leba_publication_date,
+         - Entity_remark,
+         - Naal_gender,
+         - Naal_function,
+         - Naal_language,
+         - Addr_street,
+         - Addr_zipcode,
+         - Addr_city,
+         - Addr_country,
+         - Birt_leba_publication_date) 
+
+write_rds(EU_US_full, "EU_US.rds")
+
 ```
 

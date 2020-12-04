@@ -1,0 +1,99 @@
+---
+title: "modeling"
+author: "Abigail Skalka"
+date: "11/24/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(tidyverse)
+library(rstanarm)
+library(tidymodels)
+library(broom.mixed)
+library(gtsummary)
+
+```
+
+```{r}
+
+EU_US_full
+
+fit_model <- stan_glm(formula = both ~ Programme, 
+                      data = EU_US_full,
+                      refresh = 0)
+
+model_tidy <- print(fit_model, digits = 5) %>%
+  tidy()
+
+
+model_tbl <- tbl_regression(fit_model, intercept = TRUE) %>%
+  as_gt() %>%
+    tab_header(title = "Regression of Presence of People/Entities in Both Sanctions Lists", 
+               subtitle = "The Effect of Program")
+
+```
+
+
+```{r}
+#Proportion of Sanctions by Date
+
+ggplot(EU_data_df, aes(x = Leba_publication_date)) +
+  geom_density(aes(y = after_stat(count/sum(count)))) +
+  labs(title = "Proportion of Sanctions by Date",
+       x = "Date",
+       y = "Proportion") +
+  theme_bw() 
+```
+
+```{r}
+#Proportion of Sanctions by Country of Birth
+
+EU_data_df %>%
+  drop_na(Birt_country) %>%
+ggplot(aes(x = Birt_country)) +
+  geom_histogram(fill = "navyblue", stat = "count",
+    aes(y = after_stat(count/sum(count)))) +
+  labs(title = "Proportion of Sanctions by Country of Birth",
+       x = "Country",
+       y = "Proportion") +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 90))
+
+
+count_data <- EU_data_df %>%
+  select(born_in_eu) %>%
+  group_by(born_in_eu) %>%
+  summarize(Count = n()) %>%
+  arrange(desc(born_in_eu)) %>%
+  rename("Born in EU" = born_in_eu) 
+
+birthplot <- EU_data_df %>%
+  filter(born_in_eu == "Yes") %>%
+  ggplot(aes(x = Birt_country)) +
+  geom_histogram(stat = "count",
+                 fill = "navyblue") +
+  labs(title = "Which EU Member States were Sanctionees Born in?",
+       x = "Country",
+       y = "Count") +
+  theme_bw() 
+
+
+
+
+#Was their birth country an EU member-state?
+
+EU_data_df %>%
+  ggplot(aes(x = (born_in_eu))) +
+  geom_histogram(stat = "count") +
+  labs(title = "Number of Sanctionees Born in EU Member States",
+       x = "EU Membership Status",
+       y = "Count") +
+  theme_bw() 
+
+
+
+#mess with scale/labels to see better?
+```
+
